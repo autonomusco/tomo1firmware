@@ -8,19 +8,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      IDF_VERSION: v5.2.1
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - uses: espressif/setup-esp-idf@v1
-        with:
-          version: ${{ env.IDF_VERSION }}
-      - run: idf.py set-target esp32s3
-      - run: idf.py build
-      - uses: actions/upload-artifact@v4
+
+      - name: Install ESP-IDF
+        run: |
+          git clone --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          git checkout v5.2.1
+          ./install.sh esp32s3
+          echo ". $(pwd)/export.sh" >> $GITHUB_ENV
+
+      - name: Build firmware
+        run: |
+          . $GITHUB_ENV
+          idf.py set-target esp32s3
+          idf.py build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: esp32s3-artifacts
           path: build/*
