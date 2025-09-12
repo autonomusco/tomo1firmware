@@ -113,4 +113,4 @@ Contribution Workflow
 
 License
 © Autonomus Co. – All rights reserved.  
-For Tomo development use only....final README content omitted here for brevity, but same as before...
+For Tomo development use only.
