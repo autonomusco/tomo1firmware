@@ -15,6 +15,7 @@ jobs:
         with:
           python-version: '3.11'
 
+      # Step 1: Install ESP-IDF
       - name: Install ESP-IDF
         run: |
           git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
@@ -22,7 +23,8 @@ jobs:
           git checkout v5.2.1
           ./install.sh esp32s3
 
-      - name: Build firmware with idf.py
+      # Step 2: Build firmware (source + build in one shell)
+      - name: Build Tomo firmware
         shell: bash
         run: |
           export IDF_PATH=$HOME/esp-idf
