@@ -21,11 +21,12 @@ jobs:
           cd esp-idf
           git checkout v5.2.1
           ./install.sh esp32s3
-          echo ". $(pwd)/export.sh" >> $GITHUB_ENV
 
       - name: Build firmware
         run: |
-          . $GITHUB_ENV
+          cd esp-idf
+          . ./export.sh
+          cd ..
           idf.py set-target esp32s3
           idf.py build
 
