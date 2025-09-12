@@ -17,15 +17,16 @@ jobs:
 
       - name: Install ESP-IDF
         run: |
-          git clone --recursive https://github.com/espressif/esp-idf.git ~/esp-idf
-          cd ~/esp-idf
+          git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
+          cd $HOME/esp-idf
           git checkout v5.2.1
           ./install.sh esp32s3
 
       - name: Build firmware with idf.py
+        shell: bash
         run: |
           export IDF_PATH=$HOME/esp-idf
-          . $IDF_PATH/export.sh
+          source $IDF_PATH/export.sh
           cd $GITHUB_WORKSPACE
           idf.py set-target esp32s3
           idf.py build
