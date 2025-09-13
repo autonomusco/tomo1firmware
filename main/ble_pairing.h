@@ -1,4 +1,7 @@
-fix(ble): add missing ble_pairing.h header
+#ifndef BLE_PAIRING_H
+#define BLE_PAIRING_H
 
-- Provides declaration for ble_pairing_init()
-- Resolves fatal error in app_main.c include
+void ble_pairing_init(void);
+void ble_pairing_start(void);
+
+#endif // BLE_PAIRING_H
