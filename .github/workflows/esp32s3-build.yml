@@ -37,10 +37,10 @@ jobs:
 
       - name: Build firmware with idf.py
         shell: bash
+        working-directory: ${{ github.workspace }}
         run: |
           export IDF_PATH=$HOME/esp-idf
           source $IDF_PATH/export.sh
-          cd $GITHUB_WORKSPACE
           idf.py set-target esp32s3
           idf.py build
 
@@ -49,3 +49,4 @@ jobs:
         with:
           name: esp32s3-artifacts
           path: build/*
+
