@@ -1,2 +1,12 @@
+#include "ble_pairing.h"
 #include "esp_log.h"
-void ble_init(void){} void ble_start_advertising(void){} void ble_send_event(const char*){}
+
+static const char *TAG = "BLE_PAIRING";
+
+void ble_pairing_init(void) {
+    ESP_LOGI(TAG, "ble_pairing_init called");
+}
+
+void ble_pairing_start(void) {
+    ESP_LOGI(TAG, "ble_pairing_start called");
+}
