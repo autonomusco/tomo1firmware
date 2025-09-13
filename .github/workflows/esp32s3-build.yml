@@ -1,24 +1,51 @@
-name: ESP32S3 Build
+name: ESP32-S3 Firmware Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Set up ESP-IDF
-        run: |
-          git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
-          $HOME/esp-idf/install.sh
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Build firmware
+      # Cache ESP-IDF and its tools to speed up builds
+      - name: Cache ESP-IDF
+        uses: actions/cache@v4
+        with:
+          path: |
+            $HOME/esp-idf
+            $HOME/.espressif
+          key: esp-idf-${{ runner.os }}-v5.2.1
+          restore-keys: |
+            esp-idf-${{ runner.os }}-
+
+      - name: Install ESP-IDF
         run: |
-          source $HOME/esp-idf/export.sh
+          if [ ! -d "$HOME/esp-idf" ]; then
+            git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
+            cd $HOME/esp-idf
+            git checkout v5.2.1
+            ./install.sh
+          fi
+
+      - name: Build firmware with idf.py
+        shell: bash
+        run: |
+          export IDF_PATH=$HOME/esp-idf
+          source $IDF_PATH/export.sh
+          cd $GITHUB_WORKSPACE
+          idf.py set-target esp32s3
           idf.py build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32s3-artifacts
+          path: build/*
