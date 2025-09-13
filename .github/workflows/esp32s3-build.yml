@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Cache ESP-IDF and its tools to speed up builds
+      # Cache ESP-IDF and tools
       - name: Cache ESP-IDF
         uses: actions/cache@v4
         with:
@@ -28,12 +28,18 @@ jobs:
 
       - name: Install ESP-IDF
         run: |
-          if [ ! -d "$HOME/esp-idf" ]; then
-            git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
-            cd $HOME/esp-idf
-            git checkout v5.2.1
-            ./install.sh
-          fi
+          rm -rf $HOME/esp-idf
+          git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
+          cd $HOME/esp-idf
+          git fetch --all --tags
+          git checkout v5.2.1
+          git submodule update --init --recursive
+          ./install.sh
+
+      - name: Check ESP-IDF version
+        run: |
+          cd $HOME/esp-idf
+          git describe --tags
 
       - name: Build firmware with idf.py
         shell: bash
@@ -49,4 +55,3 @@ jobs:
         with:
           name: esp32s3-artifacts
           path: build/*
-
