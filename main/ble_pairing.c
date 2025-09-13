@@ -1,12 +1,14 @@
-#include "cloud_api.h"
+#include "ble_pairing.h"
 #include "esp_log.h"
 
-static const char *TAG = "CLOUD_API";
+static const char *TAG = "BLE_PAIRING";
 
-void cloud_api_init(void) {
-    ESP_LOGI(TAG, "cloud_api_init called");
+void ble_pairing_init(void) {
+    ESP_LOGI(TAG, "ble_pairing_init called");
+    // TODO: add actual BLE pairing initialization code
 }
 
-void cloud_api_send_event(const char *event) {
-    ESP_LOGI(TAG, "cloud_api_send_event called with %s", event);
+void ble_pairing_start(void) {
+    ESP_LOGI(TAG, "ble_pairing_start called");
+    // TODO: add actual BLE pairing start code
 }
