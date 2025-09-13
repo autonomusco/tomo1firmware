@@ -1,40 +1,24 @@
-name: ESP32-S3 Firmware Build
+name: ESP32S3 Build
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      # Step 1: Install ESP-IDF
-      - name: Install ESP-IDF
+      - name: Set up ESP-IDF
         run: |
           git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
-          cd $HOME/esp-idf
-          git checkout v5.2.1
-          ./install.sh esp32s3
+          echo "source $HOME/esp-idf/export.sh" >> $GITHUB_ENV
 
-      # Step 2: Build firmware (source + build in one shell)
-      - name: Build Tomo firmware
-        shell: bash
+      - name: Build firmware
         run: |
-          export IDF_PATH=$HOME/esp-idf
-          source $IDF_PATH/export.sh
-          cd $GITHUB_WORKSPACE
-          idf.py set-target esp32s3
+          source $HOME/esp-idf/export.sh
           idf.py build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32s3-artifacts
-          path: build/*
