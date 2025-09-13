@@ -1,2 +1,12 @@
+#include "ota_update.h"
 #include "esp_log.h"
-void ota_init(void){} void ota_check_for_update(void){}
+
+static const char *TAG = "OTA_UPDATE";
+
+void ota_update_start(void) {
+    ESP_LOGI(TAG, "ota_update_start called");
+}
+
+void ota_update_check(void) {
+    ESP_LOGI(TAG, "ota_update_check called");
+}
