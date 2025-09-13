@@ -1,2 +1,12 @@
+#include "health_sensors.h"
 #include "esp_log.h"
-void health_sensors_init(void){} void health_sensors_sample_once(void){}
+
+static const char *TAG = "HEALTH_SENSORS";
+
+void health_sensors_init(void) {
+    ESP_LOGI(TAG, "health_sensors_init called");
+}
+
+void health_sensors_read(void) {
+    ESP_LOGI(TAG, "health_sensors_read called");
+}
