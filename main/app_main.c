@@ -17,12 +17,10 @@ static const char *TAG = "TOMO_MAIN";
 void app_main(void) {
     ESP_LOGI(TAG, "Starting TOMO firmware...");
 
-    // Initialize system components
     i2c_bus_init();
     power_mgmt_init();
     security_init();
 
-    // Initialize functional modules
     ble_pairing_init();
     fall_detection_init();
     health_sensors_init();
@@ -30,7 +28,6 @@ void app_main(void) {
     voice_trigger_init();
     diagnostics_run();
 
-    // Optionally start OTA and cloud connection
     ota_update_start();
     cloud_api_init();
 
