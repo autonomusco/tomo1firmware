@@ -16,6 +16,7 @@ jobs:
       - name: Set up ESP-IDF
         run: |
           git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
+          $HOME/esp-idf/install.sh
 
       - name: Build firmware
         run: |
