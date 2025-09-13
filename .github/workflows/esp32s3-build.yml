@@ -8,50 +8,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    steps:
+      # Checkout your code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Python (ESP-IDF uses it heavily)
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # Cache ESP-IDF and tools
-      - name: Cache ESP-IDF
-        uses: actions/cache@v4
-        with:
-          path: |
-            $HOME/esp-idf
-            $HOME/.espressif
-          key: esp-idf-${{ runner.os }}-v5.2.1
-          restore-keys: |
-            esp-idf-${{ runner.os }}-
+      # Install pip dependencies (optional if you add requirements.txt later)
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
 
+      # Install ESP-IDF
       - name: Install ESP-IDF
         run: |
-          rm -rf $HOME/esp-idf
-          git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
-          cd $HOME/esp-idf
-          git fetch --all --tags
-          git checkout v5.2.1
-          git submodule update --init --recursive
-          ./install.sh
+          git clone --recursive --branch v5.2.1 https://github.com/espressif/esp-idf.git $HOME/esp-idf
+          $HOME/esp-idf/install.sh
 
-      - name: Check ESP-IDF version
+      # Export ESP-IDF environment
+      - name: Export ESP-IDF environment
         run: |
-          cd $HOME/esp-idf
-          git describe --tags
+          echo "IDF_PATH=$HOME/esp-idf" >> $GITHUB_ENV
+          source $HOME/esp-idf/export.sh
+          idf.py --version
 
+      # Build your firmware
       - name: Build firmware with idf.py
-        shell: bash
-        working-directory: ${{ github.workspace }}
         run: |
-          export IDF_PATH=$HOME/esp-idf
-          source $IDF_PATH/export.sh
+          source $HOME/esp-idf/export.sh
           idf.py set-target esp32s3
           idf.py build
+        working-directory: ${{ github.workspace }}
 
-      - name: Upload build artifacts
+      # Upload build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: esp32s3-artifacts
-          path: build/*
+          name: esp32s3-firmware
+          path: build/
