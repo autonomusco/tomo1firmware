@@ -1,6 +1,7 @@
 #include "emergency_button.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "esp_attr.h"   // <— Needed for IRAM_ATTR
 
 #define TAG "EMERGENCY_BUTTON"
 
