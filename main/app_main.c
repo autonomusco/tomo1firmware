@@ -4,10 +4,11 @@
 #include "driver/i2c.h"
 
 #include "fall_detection.h"
+#include "power_mgmt.h"
 
 #define TAG "APP_MAIN"
 
-// I2C pin configuration — update if your hardware uses different pins
+// I2C pins — adjust to your board
 #define I2C_SDA_PIN 8
 #define I2C_SCL_PIN 9
 
@@ -28,19 +29,29 @@ static void i2c_bus_init(void) {
 void app_main(void) {
     ESP_LOGI(TAG, "System booting…");
 
-    // Step 1: Init I2C
+    // Init I2C
     i2c_bus_init();
 
-    // Step 2: Init fall detection
+    // Init fall detection
     if (!fall_detection_init()) {
-        ESP_LOGE(TAG, "Fall detection init failed! Check MPU6050 wiring.");
-        return;
+        ESP_LOGE(TAG, "Fall detection init failed!");
     }
 
-    ESP_LOGI(TAG, "System running. Fall detection task active.");
+    // Init power management
+    if (!power_mgmt_init()) {
+        ESP_LOGE(TAG, "Power management init failed!");
+    }
 
-    // Step 3: Idle loop
+    ESP_LOGI(TAG, "System running.");
+
+    // Periodically log battery
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        float v = 0, soc = 0;
+        if (power_mgmt_get_voltage(&v) && power_mgmt_get_soc(&soc)) {
+            ESP_LOGI(TAG, "Battery: %.3f V, %.1f%%", v, soc);
+        } else {
+            ESP_LOGW(TAG, "Battery read failed");
+        }
+        vTaskDelay(pdMS_TO_TICKS(10000)); // every 10s
     }
 }
