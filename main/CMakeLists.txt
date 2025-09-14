@@ -1,5 +1,3 @@
-message(STATUS ">>> Entering main/CMakeLists.txt <<<")
-
 idf_component_register(
     SRCS
         app_main.c
@@ -14,7 +12,9 @@ idf_component_register(
         power_mgmt.c
         security.c
         voice_trigger.c
-
     INCLUDE_DIRS
         .
+    REQUIRES
+        bt
+        nimble
 )
