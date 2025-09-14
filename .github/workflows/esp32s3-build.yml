@@ -38,7 +38,6 @@ jobs:
         run: |
           pip install -r $IDF_PATH/tools/requirements/requirements.core.txt
 
-      # ✅ NEW STEP: Install toolchain binaries (xtensa-esp32-elf, openocd, etc.)
       - name: Install ESP-IDF Tools
         run: /usr/bin/python3 $IDF_PATH/tools/idf_tools.py install
 
@@ -50,3 +49,13 @@ jobs:
         run: |
           idf.py set-target esp32s3
           idf.py build
+
+      # ✅ NEW STEP: Upload build artifacts
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32s3-firmware
+          path: |
+            build/*.bin
+            build/*.elf
+            build/*.map
