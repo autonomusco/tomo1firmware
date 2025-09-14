@@ -1,0 +1,13 @@
+# Normalize line endings to LF (important for ESP-IDF builds)
+* text=auto eol=lf
+
+# Explicitly enforce LF for source code
+*.c text eol=lf
+*.h text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+
+# Treat binaries as binary (no diff/merge)
+*.bin binary
+*.elf binary
+*.map binary
