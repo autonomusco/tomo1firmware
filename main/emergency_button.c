@@ -1,14 +1,15 @@
 #include "emergency_button.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-#include "esp_attr.h"   // <— Needed for IRAM_ATTR
+#include "esp_attr.h"
 
 #define TAG "EMERGENCY_BUTTON"
 
 // ISR handler
 static void IRAM_ATTR emergency_button_isr_handler(void *arg) {
     int gpio_num = (int)(intptr_t)arg;
-    ets_printf("Emergency button pressed! (GPIO %d)\n", gpio_num);
+    // Use ISR-safe logging
+    ESP_EARLY_LOGI(TAG, "Emergency button pressed! (GPIO %d)", gpio_num);
 }
 
 bool emergency_button_init(int gpio_num) {
@@ -31,7 +32,8 @@ bool emergency_button_init(int gpio_num) {
     }
 
     // Add ISR handler for this button GPIO
-    if (gpio_isr_handler_add(gpio_num, emergency_button_isr_handler, (void *)(intptr_t)gpio_num) != ESP_OK) {
+    if (gpio_isr_handler_add(gpio_num, emergency_button_isr_handler,
+                             (void *)(intptr_t)gpio_num) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add ISR handler for GPIO %d", gpio_num);
         return false;
     }
