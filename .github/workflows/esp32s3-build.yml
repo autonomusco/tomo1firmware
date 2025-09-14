@@ -54,28 +54,3 @@ jobs:
             build/*.bin
             build/*.elf
             build/*.map
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.IDF_TOOLS_PATH }}/python_env
-          key: ${{ runner.os }}-espidf-py-${{ hashFiles('**/esp-idf/tools/requirements/requirements.core.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-espidf-py-
-
-      - name: Clone ESP-IDF
-        run: git clone --recursive https://github.com/espressif/esp-idf.git $IDF_PATH --branch v5.1
-
-      - name: Install ESP-IDF Tools
-        run: /usr/bin/python3 $IDF_PATH/tools/idf_tools.py install
-
-      - name: Create ESP-IDF Python environment
-        run: |
-          . $IDF_PATH/export.sh
-          idf_tools.py install-python-env
-
-      - name: Export ESP-IDF environment
-        run: . $IDF_PATH/export.sh
-
-      - name: Build firmware
-        run: |
-          . $IDF_PATH/export.sh
-          idf.py build
