@@ -1,39 +1,59 @@
-name: ESP32-S3 Build
+name: ESP32-S3 Firmware Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      IDF_PATH: /home/runner/esp-idf
-      IDF_TOOLS_PATH: /home/runner/.espressif
-
     steps:
-      - name: Checkout repository
+      # Step 1: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v3
 
+      # Step 2: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
-      # Cache ESP-IDF tools
-      - name: Cache ESP-IDF tools
-        uses: actions/cache@v3
+      # Step 3: Clone ESP-IDF
+      - name: Clone ESP-IDF
+        run: git clone --branch v5.1 --recursive https://github.com/espressif/esp-idf.git /home/runner/esp-idf
+
+      # Step 4: Install ESP-IDF tools (compilers, gdb, etc.)
+      - name: Install ESP-IDF tools
+        run: python /home/runner/esp-idf/tools/idf_tools.py install
+
+      # Step 5: Install ESP-IDF Python environment
+      - name: Install ESP-IDF Python environment
+        run: |
+          python --version
+          python -m pip install --upgrade pip
+          python /home/runner/esp-idf/tools/idf_tools.py install-python-env
+
+      # Step 6: Export ESP-IDF environment
+      - name: Export ESP-IDF environment
+        run: . /home/runner/esp-idf/export.sh
+
+      # Step 7: Build firmware
+      - name: Build firmware
+        run: |
+          . /home/runner/esp-idf/export.sh
+          idf.py build
+
+      # Step 8: Upload build artifacts
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          path: ${{ env.IDF_TOOLS_PATH }}
-          key: ${{ runner.os }}-espidf-tools-${{ hashFiles('**/esp-idf/tools/idf_tools.py') }}
-          restore-keys: |
-            ${{ runner.os }}-espidf-tools-
-
-      # Cache ESP-IDF Python virtual environment
-      - name: Cache ESP-IDF Python environment
+          name: tomo1-firmware
+          path: |
+            build/*.bin
+            build/*.elf
+            build/*.map
         uses: actions/cache@v3
         with:
           path: ${{ env.IDF_TOOLS_PATH }}/python_env
