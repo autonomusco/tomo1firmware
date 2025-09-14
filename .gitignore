@@ -1,44 +1,57 @@
-# Build artifacts
-/build
+# =====================================================
+# ESP-IDF Build Artifacts
+# =====================================================
+/build/
 /sdkconfig
 /sdkconfig.old
 /CMakeCache.txt
 /CMakeFiles/
-Makefile
+/Makefile
 *.cmake
 *.bin
 *.elf
 *.map
 *.log
 
-# Python
+# =====================================================
+# Python Virtual Environments & Caches
+# =====================================================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.env
 .venv/
-.env/
+env/
 venv/
+ENV/
+*.env
 
-# IDF tools and dependencies
+# =====================================================
+# IDF Tools & Dependencies
+# =====================================================
 /espressif/
 dist/
 .eggs/
 *.egg-info/
 *.egg
 
-# VS Code / IDE
+# =====================================================
+# IDE / Editor Files
+# =====================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *.DS_Store
 
-# GitHub Actions
+# =====================================================
+# GitHub Actions & Local Overrides
+# =====================================================
 *.envrc
 .envrc
 
-# Misc
+# =====================================================
+# Miscellaneous
+# =====================================================
 *.bak
 *.tmp
