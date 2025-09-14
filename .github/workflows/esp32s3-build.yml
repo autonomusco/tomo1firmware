@@ -2,50 +2,52 @@ name: ESP32-S3 Firmware Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo
-      - name: Checkout code
+      # 1. Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Install Python and pip tools
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Upgrade pip tooling
+      # 2. Install ESP-IDF dependencies
+      - name: Install system dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          sudo apt-get update
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip cmake ninja-build ccache libffi-dev libssl-dev dfu-util
 
-      # Step 3: Install ESP-IDF
+      # 3. Cache pip dependencies to speed up builds
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # 4. Get ESP-IDF
       - name: Clone ESP-IDF
         run: |
-          git clone --branch v5.2.1 --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
-          $HOME/esp-idf/install.sh esp32s3
+          git clone --recursive https://github.com/espressif/esp-idf.git /home/runner/esp-idf
+          cd /home/runner/esp-idf && git checkout v5.1.2  # lock to stable version
 
+      # 5. Install Python requirements (FIXED PATH)
+      - name: Install Python dependencies
+        run: |
+          pip install -r /home/runner/esp-idf/tools/requirements/requirements.core.txt
+
+      # 6. Export ESP-IDF environment
       - name: Export ESP-IDF
         run: |
-          echo "IDF_PATH=$HOME/esp-idf" >> $GITHUB_ENV
-          source $HOME/esp-idf/export.sh
-          python -m pip install -r $HOME/esp-idf/requirements.txt
+          . /home/runner/esp-idf/export.sh
 
-      # Step 4: Build firmware
-      - name: Build firmware
+      # 7. Build firmware
+      - name: Build project
         run: |
-          source $HOME/esp-idf/export.sh
           idf.py set-target esp32s3
           idf.py build
-
-      # Step 5: Upload artifacts
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: tomo1firmware-artifacts
-          path: build/*
