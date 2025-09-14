@@ -61,3 +61,4 @@ bool power_mgmt_get_soc(float *soc) {
     *soc = (raw >> 8) + ((raw & 0xFF) / 256.0f);
     return true;
 }
+
