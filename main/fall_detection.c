@@ -2,6 +2,8 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "driver/i2c.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <math.h>
 #include <string.h>
 
@@ -28,7 +30,7 @@
 
 #define ACCEL_LSB_PER_G 16384.0f
 
-// Internal detector state
+// Detector state
 typedef enum {
     FD_STATE_IDLE = 0,
     FD_STATE_IMPACT_OBSERVED
@@ -55,7 +57,10 @@ static fd_ctx_t s_fd = {
     .has_evt = false
 };
 
-// Utility
+// Forward declaration
+static void fall_detection_task(void *arg);
+
+// Utils
 static inline uint32_t now_ms(void) {
     return (uint32_t)(esp_timer_get_time() / 1000ULL);
 }
@@ -129,30 +134,8 @@ static float accel_mag_g_from_raw(int16_t ax, int16_t ay, int16_t az) {
     return sqrtf(x*x + y*y + z*z);
 }
 
-// -------- PUBLIC API --------
-bool fall_detection_init(void) {
-    ESP_LOGI(TAG, "Initializing fall detection…");
-
-    if (!mpu6050_whoami_ok()) {
-        ESP_LOGE(TAG, "MPU6050 WHO_AM_I check failed");
-        return false;
-    }
-
-    if (!mpu6050_init()) {
-        ESP_LOGE(TAG, "MPU6050 configuration failed");
-        return false;
-    }
-
-    memset(&s_fd.last_evt, 0, sizeof(s_fd.last_evt));
-    s_fd.has_evt = false;
-    s_fd.state = FD_STATE_IDLE;
-    s_fd.impact_ts_ms = 0;
-
-    ESP_LOGI(TAG, "Fall detection ready");
-    return true;
-}
-
-void fall_detection_check(void) {
+// Core detection logic
+static void fall_detection_check(void) {
     int16_t ax, ay, az, gx, gy, gz;
     if (!mpu6050_read_raw(&ax, &ay, &az, &gx, &gy, &gz)) {
         ESP_LOGW(TAG, "Sensor read failed");
@@ -197,6 +180,40 @@ void fall_detection_check(void) {
             s_fd.state = FD_STATE_IDLE;
             break;
     }
+}
+
+// FreeRTOS background task
+static void fall_detection_task(void *arg) {
+    while (1) {
+        fall_detection_check();
+        vTaskDelay(pdMS_TO_TICKS(FD_SAMPLE_PERIOD_MS));
+    }
+}
+
+// -------- PUBLIC API --------
+bool fall_detection_init(void) {
+    ESP_LOGI(TAG, "Initializing fall detection…");
+
+    if (!mpu6050_whoami_ok()) {
+        ESP_LOGE(TAG, "MPU6050 WHO_AM_I check failed");
+        return false;
+    }
+
+    if (!mpu6050_init()) {
+        ESP_LOGE(TAG, "MPU6050 configuration failed");
+        return false;
+    }
+
+    memset(&s_fd.last_evt, 0, sizeof(s_fd.last_evt));
+    s_fd.has_evt = false;
+    s_fd.state = FD_STATE_IDLE;
+    s_fd.impact_ts_ms = 0;
+
+    // Start background task
+    xTaskCreate(fall_detection_task, "fall_det_task", 4096, NULL, 5, NULL);
+
+    ESP_LOGI(TAG, "Fall detection ready (task running every %d ms)", FD_SAMPLE_PERIOD_MS);
+    return true;
 }
 
 bool fall_detection_get_last(fall_event_t *out) {
