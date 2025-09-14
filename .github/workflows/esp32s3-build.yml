@@ -1,4 +1,4 @@
-name: ESP32-S3 Firmware Build
+name: ESP32-S3 Build
 
 on:
   push:
@@ -9,55 +9,53 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     env:
       IDF_PATH: /home/runner/esp-idf
+      IDF_TOOLS_PATH: /home/runner/.espressif
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git wget flex bison gperf python3 python3-pip cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
-      - name: Cache pip
+      # Cache ESP-IDF tools
+      - name: Cache ESP-IDF tools
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          path: ${{ env.IDF_TOOLS_PATH }}
+          key: ${{ runner.os }}-espidf-tools-${{ hashFiles('**/esp-idf/tools/idf_tools.py') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-espidf-tools-
+
+      # Cache ESP-IDF Python virtual environment
+      - name: Cache ESP-IDF Python environment
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.IDF_TOOLS_PATH }}/python_env
+          key: ${{ runner.os }}-espidf-py-${{ hashFiles('**/esp-idf/tools/requirements/requirements.core.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-espidf-py-
 
       - name: Clone ESP-IDF
-        run: |
-          git clone --recursive https://github.com/espressif/esp-idf.git $IDF_PATH
-          cd $IDF_PATH && git checkout v5.1.2
-
-      - name: Install Python dependencies
-        run: |
-          pip install -r $IDF_PATH/tools/requirements/requirements.core.txt
+        run: git clone --recursive https://github.com/espressif/esp-idf.git $IDF_PATH --branch v5.1
 
       - name: Install ESP-IDF Tools
         run: /usr/bin/python3 $IDF_PATH/tools/idf_tools.py install
 
-      - name: Install ESP-IDF Python environment
-        run: /usr/bin/python3 $IDF_PATH/tools/idf_tools.py install-python-env
-
-      - name: Export ESP-IDF
+      - name: Create ESP-IDF Python environment
         run: |
           . $IDF_PATH/export.sh
+          idf_tools.py install-python-env
 
-      - name: Build project
+      - name: Export ESP-IDF environment
+        run: . $IDF_PATH/export.sh
+
+      - name: Build firmware
         run: |
-          idf.py set-target esp32s3
+          . $IDF_PATH/export.sh
           idf.py build
-
-      - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32s3-firmware
-          path: |
-            build/*.bin
-            build/*.elf
-            build/*.map
