@@ -10,44 +10,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout your code
-      - name: Checkout repository
+      # Step 1: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Python (ESP-IDF uses it heavily)
+      # Step 2: Install Python and pip tools
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # Install pip dependencies (optional if you add requirements.txt later)
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      # Install ESP-IDF
-      - name: Install ESP-IDF
+      - name: Upgrade pip tooling
         run: |
-          git clone --recursive --branch v5.2.1 https://github.com/espressif/esp-idf.git $HOME/esp-idf
-          $HOME/esp-idf/install.sh
+          python -m pip install --upgrade pip setuptools wheel
 
-      # Export ESP-IDF environment
-      - name: Export ESP-IDF environment
+      # Step 3: Install ESP-IDF
+      - name: Clone ESP-IDF
+        run: |
+          git clone --branch v5.2.1 --recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
+          $HOME/esp-idf/install.sh esp32s3
+
+      - name: Export ESP-IDF
         run: |
           echo "IDF_PATH=$HOME/esp-idf" >> $GITHUB_ENV
           source $HOME/esp-idf/export.sh
-          idf.py --version
+          python -m pip install -r $HOME/esp-idf/requirements.txt
 
-      # Build your firmware
-      - name: Build firmware with idf.py
+      # Step 4: Build firmware
+      - name: Build firmware
         run: |
           source $HOME/esp-idf/export.sh
           idf.py set-target esp32s3
           idf.py build
-        working-directory: ${{ github.workspace }}
 
-      # Upload build artifacts
-      - name: Upload artifacts
+      # Step 5: Upload artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: esp32s3-firmware
-          path: build/
+          name: tomo1firmware-artifacts
+          path: build/*
