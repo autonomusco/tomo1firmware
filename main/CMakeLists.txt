@@ -12,10 +12,10 @@ idf_component_register(
         "power_mgmt.c"
         "security.c"
         "voice_trigger.c"
-    INCLUDE_DIRS
-        "."
+    INCLUDE_DIRS "."
     REQUIRES
         bt
+        nimble
         nvs_flash
         esp_system
         esp_event
