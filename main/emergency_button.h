@@ -1,12 +1,9 @@
-#ifndef BUTTON_H
-#define BUTTON_H
+#ifndef EMERGENCY_BUTTON_H
+#define EMERGENCY_BUTTON_H
 
 #include <stdbool.h>
 
-/**
- * Initialize the emergency button GPIO and ISR.
- * Returns true if successful, false otherwise.
- */
-bool button_init(int gpio_num);
+// Initialize emergency button on given GPIO
+bool emergency_button_init(int gpio);
 
-#endif // BUTTON_H
+#endif // EMERGENCY_BUTTON_H
