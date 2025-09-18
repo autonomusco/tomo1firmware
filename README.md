@@ -110,6 +110,7 @@ Contribution Workflow
 4. Ensure GitHub Actions build passes.  
 5. Request review and merge.  
 
+Commit directly to main.
 
 ## 📜 License
 © Autonomus Co. – All rights reserved.  
