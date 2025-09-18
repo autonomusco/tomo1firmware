@@ -18,10 +18,10 @@ static esp_timer_handle_t telemetry_timer;
 static void alert_cb(button_event_t ev) {
     if (ev == BUTTON_EVENT_PRESS) {
         ESP_LOGW(TAG, "ALERT button pressed");
-        ble_send_alert_code(0x01);   // 0x01 = button press
+        ble_send_alert_code(0x01);   // button press
     } else if (ev == BUTTON_EVENT_LONG) {
         ESP_LOGW(TAG, "LONG button press");
-        ble_send_alert_code(0x11);   // custom long-press code
+        ble_send_alert_code(0x11);   // long-press code
     }
 }
 
@@ -37,7 +37,7 @@ static void telemetry_cb(void *arg) {
 
     if (mpu6050_fall_detected()) {
         ESP_LOGW(TAG, "FALL detected -> sending alert");
-        ble_send_alert_code(0x02);   // 0x02 = fall event
+        ble_send_alert_code(0x02);   // fall event
     }
 
     ESP_LOGI(TAG, "SOC: %.1f%% | accel[g]: [%.2f, %.2f, %.2f]",
