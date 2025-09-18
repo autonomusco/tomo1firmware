@@ -11,6 +11,7 @@
 #include "host/util/util.h"
 #include "host/ble_gatt.h"
 #include "host/ble_hs_id.h"
+#include "host/ble_store.h"             // <-- needed for ble_store_util_status_rr
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
@@ -21,6 +22,7 @@ static const char *TAG = "BLE_NIMBLE";
 /* ------- App-level state ------- */
 static char s_dev_name[32] = "TomoPendant";
 static uint16_t s_conn_handle = BLE_HS_CONN_HANDLE_NONE;
+static uint8_t  s_own_addr_type = BLE_OWN_ADDR_PUBLIC;   // <-- set on sync()
 
 /* Battery cache */
 static uint8_t s_batt_pct = 100;
@@ -35,7 +37,7 @@ static uint16_t s_batt_val_handle   = 0;
 static uint16_t s_alert_val_handle  = 0;
 static uint16_t s_motion_val_handle = 0;
 
-/* Custom 128-bit UUIDs (little-endian in this macro) */
+/* Custom 128-bit UUIDs */
 static const ble_uuid128_t TOMO_SVC_UUID =
     BLE_UUID128_INIT(0x44,0x33,0x22,0x11,0x66,0x55,0x22,0x9a,0xb1,0x4a,0x0d,0x5c,0x10,0x21,0x33,0x9a);
 static const ble_uuid128_t TOMO_ALERT_UUID =
@@ -82,7 +84,7 @@ static const struct ble_gatt_chr_def gatt_tomo_chrs[] = {
     },
     {
         .uuid = &TOMO_MOTION_UUID.u,
-        .access_cb = gatt_chr_access_cb, /* no reads/writes; notify only, access_cb not used */
+        .access_cb = gatt_chr_access_cb, /* notify-only; access_cb returns not supported */
         .val_handle = &s_motion_val_handle,
         .flags = BLE_GATT_CHR_F_NOTIFY,
     },
@@ -212,32 +214,39 @@ static void start_advertising(void)
     struct ble_hs_adv_fields rsp = {0};
     ble_uuid16_t bas = *BLE_UUID16_DECLARE(0x180F);
     rsp.uuids16 = &bas; rsp.num_uuids16 = 1; rsp.uuids16_is_complete = 1;
-    ble_gap_adv_rsp_set_fields(&rsp);
+    rc = ble_gap_adv_rsp_set_fields(&rsp);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "ble_gap_adv_rsp_set_fields rc=%d", rc);
+        return;
+    }
 
-    rc = ble_gap_adv_start(BLE_OWN_ADDR_PUBLIC, NULL, BLE_HS_FOREVER,
-                           &advp, gap_event_cb, NULL);
+    rc = ble_gap_adv_start(s_own_addr_type, NULL, BLE_HS_FOREVER, &advp, gap_event_cb, NULL);
     if (rc != 0) {
         ESP_LOGE(TAG, "ble_gap_adv_start rc=%d", rc);
     } else {
-        ESP_LOGI(TAG, "Advertising as '%s'...", s_dev_name);
+        ESP_LOGI(TAG, "Advertising as '%s' (own_addr_type=%u)...", s_dev_name, s_own_addr_type);
     }
 }
 
 /* ------- Host sync / reset ------- */
 static void on_sync(void)
 {
-    uint8_t addr_val[6] = {0};
-    int rc = ble_hs_id_infer_auto(0, &addr_val[0]);
+    /* Choose best address type (PUBLIC if burned; else RANDOM static) */
+    int rc = ble_hs_id_infer_auto(0, &s_own_addr_type);
     if (rc != 0) {
         ESP_LOGE(TAG, "ble_hs_id_infer_auto rc=%d", rc);
+        s_own_addr_type = BLE_OWN_ADDR_RANDOM;
     }
-    ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, addr_val, NULL);
-    ESP_LOGI(TAG, "BLE addr: %02X:%02X:%02X:%02X:%02X:%02X",
+
+    uint8_t addr_val[6] = {0};
+    ble_hs_id_copy_addr(s_own_addr_type, addr_val, NULL);
+    ESP_LOGI(TAG, "BLE addr (%s): %02X:%02X:%02X:%02X:%02X:%02X",
+             s_own_addr_type == BLE_OWN_ADDR_PUBLIC ? "public" : "random",
              addr_val[5], addr_val[4], addr_val[3], addr_val[2], addr_val[1], addr_val[0]);
 
     /* Register services */
-    rc = ble_gatts_count_cfg(gatt_svcs); if (rc) { ESP_LOGE(TAG, "count rc=%d", rc); return; }
-    rc = ble_gatts_add_svcs(gatt_svcs);  if (rc) { ESP_LOGE(TAG, "add rc=%d", rc); return; }
+    rc = ble_gatts_count_cfg(gatt_svcs); if (rc) { ESP_LOGE(TAG, "gatts_count_cfg rc=%d", rc); return; }
+    rc = ble_gatts_add_svcs(gatt_svcs);  if (rc) { ESP_LOGE(TAG, "gatts_add_svcs rc=%d", rc);  return; }
 
     /* Set GAP name */
     ble_svc_gap_device_name_set(s_dev_name);
@@ -265,7 +274,7 @@ void ble_init(void)
     ble_svc_gatt_init();
     ble_hs_cfg.reset_cb = on_reset;
     ble_hs_cfg.sync_cb  = on_sync;
-    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;   // default store handler
     nimble_port_freertos_init(ble_host_task);
 }
 
@@ -298,16 +307,19 @@ void ble_update_battery(uint8_t percent)
     }
 }
 
+static inline int16_t clamp_i16(int v) { if (v > 32767) return 32767; if (v < -32768) return -32768; return (int16_t)v; }
+
 void ble_update_motion(float ax, float ay, float az)
 {
-    if (s_conn_handle == BLE_HS_CONN_HANDLE_NONE || !s_sub_motion || s_motion_val_handle == 0)
+    if (!(s_conn_handle != BLE_HS_CONN_HANDLE_NONE && s_sub_motion && s_motion_val_handle != 0))
         return;
 
     /* Pack accel in mg (int16): mg = g * 1000; clamp to +/- 32767 mg */
-    int16_t pax = (int16_t)(ax * 1000.0f);
-    int16_t pay = (int16_t)(ay * 1000.0f);
-    int16_t paz = (int16_t)(az * 1000.0f);
-    int16_t payload[3] = { pax, pay, paz };
+    int16_t payload[3] = {
+        clamp_i16((int)(ax * 1000.0f)),
+        clamp_i16((int)(ay * 1000.0f)),
+        clamp_i16((int)(az * 1000.0f))
+    };
 
     struct os_mbuf *om = ble_hs_mbuf_from_flat(payload, sizeof(payload));
     int rc = ble_gatts_notify_custom(s_conn_handle, s_motion_val_handle, om);
@@ -316,7 +328,7 @@ void ble_update_motion(float ax, float ay, float az)
 
 void ble_send_alert_code(uint8_t code)
 {
-    if (s_conn_handle == BLE_HS_CONN_HANDLE_NONE || !s_sub_alert || s_alert_val_handle == 0) {
+    if (!(s_conn_handle != BLE_HS_CONN_HANDLE_NONE && s_sub_alert && s_alert_val_handle != 0)) {
         ESP_LOGW(TAG, "No subscriber/connection for alert");
         return;
     }
@@ -325,4 +337,5 @@ void ble_send_alert_code(uint8_t code)
     if (rc != 0) ESP_LOGW(TAG, "alert notify rc=%d", rc);
     else ESP_LOGI(TAG, "Alert notified: 0x%02X", code);
 }
+
 
