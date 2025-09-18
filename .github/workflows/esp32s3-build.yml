@@ -2,54 +2,31 @@ name: ESP32-S3 Firmware Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    container:
+      image: espressif/idf:release-v5.2
 
     steps:
-      # Step 1: Checkout repo
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Step 2: Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      - name: Set ESP32-S3 target
+        run: idf.py set-target esp32s3
 
-      # Step 3: Clone ESP-IDF
-      - name: Clone ESP-IDF
-        run: git clone --branch v5.1 --recursive https://github.com/espressif/esp-idf.git /home/runner/esp-idf
-
-      # Step 4: Install ESP-IDF tools (compilers, gdb, etc.)
-      - name: Install ESP-IDF tools
-        run: python /home/runner/esp-idf/tools/idf_tools.py install
-
-      # Step 5: Install ESP-IDF Python environment
-      - name: Install ESP-IDF Python environment
-        run: |
-          python --version
-          python -m pip install --upgrade pip
-          python /home/runner/esp-idf/tools/idf_tools.py install-python-env
-
-      # Step 6: Export ESP-IDF environment
-      - name: Export ESP-IDF environment
-        run: . /home/runner/esp-idf/export.sh
-
-      # Step 7: Build firmware
       - name: Build firmware
-        run: |
-          . /home/runner/esp-idf/export.sh
-          idf.py build
+        run: idf.py build
 
-      # Step 8: Upload build artifacts
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tomo1-firmware
+          name: tomo1firmware-${{ github.sha }}
           path: |
             build/*.bin
             build/*.elf
