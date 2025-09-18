@@ -3,10 +3,10 @@
 #include "esp_log.h"
 
 #define MAX17048_ADDR 0x36
-#define REG_VCELL 0x02
-#define REG_SOC   0x04
-#define REG_MODE  0x06
-#define REG_VERSION 0x08
+#define REG_VCELL     0x02
+#define REG_SOC       0x04
+#define REG_MODE      0x06
+#define REG_VERSION   0x08
 
 static const char *TAG = "MAX17048";
 static bool ready = false;
@@ -27,7 +27,7 @@ void max17048_init(void) {
 float max17048_get_voltage(void) {
     if (!ready) return -1.f;
     uint16_t raw = rd16(REG_VCELL);
-    // 12-bit value in high bits; per datasheet each LSB = 1.25mV when aligned
+    // 12-bit value in high bits; each LSB = 1.25mV
     float volts = ((raw >> 4) * 1.25f) / 1000.0f;
     return volts;
 }
@@ -37,6 +37,9 @@ float max17048_get_soc(void) {
     uint16_t raw = rd16(REG_SOC);
     // high byte = integer %, low byte = fractional (1/256)
     float soc = (raw >> 8) + ((raw & 0xFF) / 256.0f);
-    if (soc < 0) soc = 0; if (soc > 100) soc = 100;
+
+    if (soc < 0) soc = 0;
+    if (soc > 100) soc = 100;
+
     return soc;
 }
