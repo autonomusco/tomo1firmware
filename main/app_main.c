@@ -1,32 +1,58 @@
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <stdio.h>
 #include "esp_log.h"
-#include "driver/i2c.h"
+#include "nvs_flash.h"
+#include "driver/gpio.h"
+#include "esp_timer.h"
+#include "esp_sleep.h"
 
-#include "fall_detection.h"
-#include "power_mgmt.h"
-#include "emergency_button.h"
-#include "ble_pairing.h"
+#include "i2c_bus.h"
+#include "max17048.h"
+#include "mpu6050.h"
+#include "button.h"
+#include "ble.h"
 
-#define TAG "APP_MAIN"
+static const char *TAG = "APP";
+static esp_timer_handle_t telemetry_timer;
 
-#define I2C_SDA_PIN 8
-#define I2C_SCL_PIN 9
-#define BUTTON_GPIO 0
-
-static void i2c_bus_init(void) {
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_SDA_PIN,
-        .scl_io_num = I2C_SCL_PIN,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = 100000,
-    };
-    i2c_param_config(I2C_NUM_0, &conf);
-    i2c_driver_install(I2C_NUM_0, conf.mode, 0, 0, 0);
-    ESP_LOGI(TAG, "I2C bus initialized (SDA=%d, SCL=%d)", I2C_SDA_PIN, I2C_SCL_PIN);
+static void telemetry_cb(void *arg) {
+    float soc = max17048_get_soc();
+    mpu6050_reading_t m = mpu6050_read();
+    ble_update_battery((uint8_t)(soc + 0.5f));
+    ble_update_motion(m.ax, m.ay, m.az);
+    ESP_LOGI(TAG, "SOC: %.1f%% | accel: [%.2f, %.2f, %.2f]", soc, m.ax, m.ay, m.az);
 }
+
+static void alert_cb(button_event_t ev) {
+    if (ev == BUTTON_EVENT_PRESS) {
+        ESP_LOGW(TAG, "ALERT button pressed");
+        ble_send_alert();
+    }
+}
+
+void app_main(void) {
+    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(i2c_bus_init(GPIO_NUM_8, GPIO_NUM_9, 400000)); // SDA=8, SCL=9
+
+    max17048_init();
+    mpu6050_init();
+
+    button_init(GPIO_NUM_0, alert_cb); // pull-up + ISR, active-low
+
+    ble_init();        // sets up GAP/GATT, starts adv
+    ble_set_device_name("TomoPendant");
+    ble_start_advertising();
+
+    const esp_timer_create_args_t tcfg = {
+        .callback = telemetry_cb, .name = "telemetry"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&tcfg, &telemetry_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(telemetry_timer, 5 * 1000 * 1000)); // 5s
+
+    // Optionally enable light sleep between events:
+    // esp_sleep_enable_timer_wakeup(1000 * 1000);
+    // esp_light_sleep_start();
+}
+
 
 void app_main(void) {
     ESP_LOGI(TAG, "System booting…");
