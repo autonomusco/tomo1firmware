@@ -193,8 +193,10 @@ static void start_advertising(void)
     }
 
     struct ble_hs_adv_fields rsp = {0};
-    ble_uuid16_t bas = *BLE_UUID16_DECLARE(0x180F);
-    rsp.uuids16 = &bas; rsp.num_uuids16 = 1; rsp.uuids16_is_complete = 1;
+    static ble_uuid16_t bas = { .u = { .type = BLE_UUID_TYPE_16 }, .value = 0x180F };
+    rsp.uuids16 = &bas;
+    rsp.num_uuids16 = 1;
+    rsp.uuids16_is_complete = 1;
     ble_gap_adv_rsp_set_fields(&rsp);
 
     rc = ble_gap_adv_start(s_own_addr_type, NULL, BLE_HS_FOREVER, &advp, gap_event_cb, NULL);
