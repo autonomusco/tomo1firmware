@@ -15,6 +15,7 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
+#include "esp_bt.h"                     // for esp_bt_controller_mem_release
 #include "ble.h"
 
 static const char *TAG = "BLE_NIMBLE";
@@ -244,7 +245,10 @@ static void ble_host_task(void *param)
 /* ------- Public API ------- */
 void ble_init(void)
 {
-    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
+    // ESP-IDF v5.x init sequence
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+    ESP_ERROR_CHECK(esp_nimble_hci_init());
+
     nimble_port_init();
     ble_svc_gap_init();
     ble_svc_gatt_init();
