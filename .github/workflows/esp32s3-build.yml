@@ -17,11 +17,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Ensure ESP-IDF environment is sourced so idf.py is in PATH
       - name: Set ESP32-S3 target
-        run: idf.py set-target esp32s3
+        run: . $IDF_PATH/export.sh && idf.py set-target esp32s3
 
       - name: Build firmware
-        run: idf.py build
+        run: . $IDF_PATH/export.sh && idf.py build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -31,3 +32,4 @@ jobs:
             build/*.bin
             build/*.elf
             build/*.map
+
