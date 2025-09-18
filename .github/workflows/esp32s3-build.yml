@@ -17,7 +17,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Ensure ESP-IDF environment is sourced so idf.py is in PATH
       - name: Set ESP32-S3 target
         run: . $IDF_PATH/export.sh && idf.py set-target esp32s3
 
@@ -32,4 +31,3 @@ jobs:
             build/*.bin
             build/*.elf
             build/*.map
-
