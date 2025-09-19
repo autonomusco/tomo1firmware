@@ -10,6 +10,12 @@ static uint16_t s_cfg_val_handle = 0;
 static uint16_t s_ota_val_handle = 0;
 
 /* UUIDs – fixed struct initializers */
+static const ble_uuid128_t ADV_SVC_UUID = {
+    .u = { .type = BLE_UUID_TYPE_128 },
+    .value = { 0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
+               0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x02 }
+};
+
 static const ble_uuid128_t CFG_UUID = {
     .u = { .type = BLE_UUID_TYPE_128 },
     .value = { 0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
@@ -70,7 +76,7 @@ void ble_advanced_init(void) {
     static const struct ble_gatt_svc_def adv_svc[] = {
         {
             .type = BLE_GATT_SVC_TYPE_PRIMARY,
-            .uuid = &CFG_UUID.u,  // service UUID could be distinct, reusing here for demo
+            .uuid = &ADV_SVC_UUID.u,   // dedicated Advanced Service UUID
             .characteristics = adv_chrs,
         },
         { 0 }
