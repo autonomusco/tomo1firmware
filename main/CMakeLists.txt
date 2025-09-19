@@ -1,14 +1,14 @@
 idf_component_register(
     SRCS
         "app_main.c"
-        "ble.c"
+        "i2c_bus.c"
+        "power_mgmt.c"
+        "mpu6050.c"
+        "fall_detection.c"
         "button.c"
         "emergency_button.c"
-        "i2c_bus.c"
-        "max17048.c"
-        "mpu6050.c"
-        "power_mgmt.c"
-        "fall_detection.c"
+        "ble.c"
+        "ota_update.c"
     INCLUDE_DIRS
         "."
 )
