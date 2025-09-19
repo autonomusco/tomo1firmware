@@ -8,13 +8,15 @@
 #include "i2c_bus.h"
 #include "power_mgmt.h"
 #include "mpu6050.h"
+#include "fall_detection.h"
 #include "button.h"
+#include "emergency_button.h"
 #include "ble.h"
 
 static const char *TAG = "APP";
 static esp_timer_handle_t telemetry_timer;
 
-/* --------- Button Callback --------- */
+/* --------- Normal Button Callback --------- */
 static void alert_cb(button_event_t ev) {
     if (ev == BUTTON_EVENT_PRESS) {
         ESP_LOGW(TAG, "ALERT button pressed");
@@ -22,6 +24,17 @@ static void alert_cb(button_event_t ev) {
     } else if (ev == BUTTON_EVENT_LONG) {
         ESP_LOGW(TAG, "LONG button press");
         ble_send_alert_code(0x11);
+    }
+}
+
+/* --------- Emergency Button Callback --------- */
+static void emergency_cb(emergency_event_t ev) {
+    if (ev == EMERGENCY_EVENT_PRESS) {
+        ESP_LOGW(TAG, "EMERGENCY button pressed");
+        ble_send_alert_code(0x03);
+    } else if (ev == EMERGENCY_EVENT_LONG) {
+        ESP_LOGW(TAG, "EMERGENCY button long press");
+        ble_send_alert_code(0x13);
     }
 }
 
@@ -42,7 +55,7 @@ static void telemetry_cb(void *arg) {
     mpu6050_reading_t m = mpu6050_read();
     ble_update_motion(m.ax, m.ay, m.az);
 
-    if (mpu6050_fall_detected()) {
+    if (fall_detection_check(&m)) {
         ESP_LOGW(TAG, "FALL detected -> sending alert");
         ble_send_alert_code(0x02);
     }
@@ -61,7 +74,9 @@ void app_main(void) {
     // Init subsystems
     power_mgmt_init();
     mpu6050_init();
+    fall_detection_init();
     button_init(GPIO_NUM_0, alert_cb);
+    emergency_button_init(GPIO_NUM_1, emergency_cb);  // Emergency button on GPIO1
 
     // Init BLE
     ble_init();
