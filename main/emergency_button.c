@@ -27,7 +27,7 @@ static void IRAM_ATTR isr(void *arg) {
     }
 }
 
-void emergency_button_init(gpio_num_t gpio, emergency_cb_t cb) {
+bool emergency_button_init(gpio_num_t gpio, emergency_cb_t cb) {
     s_gpio = gpio;
     s_cb = cb;
 
@@ -38,9 +38,10 @@ void emergency_button_init(gpio_num_t gpio, emergency_cb_t cb) {
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_ANYEDGE
     };
-    ESP_ERROR_CHECK(gpio_config(&io_conf));
-    ESP_ERROR_CHECK(gpio_install_isr_service(0));
-    ESP_ERROR_CHECK(gpio_isr_handler_add(gpio, isr, NULL));
+    if (gpio_config(&io_conf) != ESP_OK) return false;
+    if (gpio_install_isr_service(0) != ESP_OK) return false;
+    if (gpio_isr_handler_add(gpio, isr, NULL) != ESP_OK) return false;
 
     ESP_LOGI(TAG, "Emergency button initialized on GPIO %d", gpio);
+    return true;
 }
