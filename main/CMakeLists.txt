@@ -3,10 +3,12 @@ idf_component_register(
         "app_main.c"
         "ble.c"
         "button.c"
+        "emergency_button.c"
         "i2c_bus.c"
         "max17048.c"
         "mpu6050.c"
         "power_mgmt.c"
+        "fall_detection.c"
     INCLUDE_DIRS
         "."
 )
