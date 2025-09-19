@@ -37,8 +37,8 @@ static void emergency_cb(emergency_event_t ev) {
         ESP_LOGW(TAG, "EMERGENCY button long press");
         ble_send_alert_code(0x13);
 
-        // Example future hook: trigger OTA on long press (stub for now)
-        ota_update_start("https://example.com/firmware.bin");
+        // Example future hook: trigger OTA update (stub)
+        ota_update_start();
     }
 }
 
@@ -81,7 +81,7 @@ void app_main(void) {
     fall_detection_init();
     button_init(GPIO_NUM_0, alert_cb);
     emergency_button_init(GPIO_NUM_1, emergency_cb);
-    ota_update_init();
+    // ota_update_init();  // Not implemented yet
 
     // Init BLE
     ble_init();
