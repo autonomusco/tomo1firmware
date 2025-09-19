@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read   # principle of least privilege
+      contents: read   # restrict GITHUB_TOKEN to read-only
 
     container:
       image: espressif/idf:release-v5.2
@@ -24,3 +24,9 @@ jobs:
 
       - name: Build firmware
         run: . $IDF_PATH/export.sh && idf.py build
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: tomo-pendant-firmware
+          path: build/*.bin
