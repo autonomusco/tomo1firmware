@@ -1,27 +1,17 @@
 #pragma once
-#include <stdbool.h>
-#include "esp_err.h"
-
-/**
- * Stage 8: Health sensor integration (stubs).
- * For now, returns dummy SpO₂ + HR values.
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct {
-    float spo2;   // oxygen saturation %
-    float hr;     // heart rate bpm
+    float spo2;   // SpO2 oxygen saturation (%)
+    float hr;     // Heart rate (bpm)
 } health_reading_t;
 
-/** Initialize health sensor subsystem (stub). */
-esp_err_t health_sensors_init(void);
+/**
+ * Initialize health sensors (stub or real).
+ */
+void health_sensors_init(void);
 
-/** Read health values (stub). */
+/**
+ * Read health sensor values.
+ * @return struct containing SpO2 and HR
+ */
 health_reading_t health_sensors_read(void);
-
-#ifdef __cplusplus
-}
-#endif
