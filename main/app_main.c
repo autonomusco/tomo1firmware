@@ -12,6 +12,7 @@
 #include "button.h"
 #include "emergency_button.h"
 #include "ble.h"
+#include "ota_update.h"
 
 static const char *TAG = "APP";
 static esp_timer_handle_t telemetry_timer;
@@ -35,6 +36,9 @@ static void emergency_cb(emergency_event_t ev) {
     } else if (ev == EMERGENCY_EVENT_LONG) {
         ESP_LOGW(TAG, "EMERGENCY button long press");
         ble_send_alert_code(0x13);
+
+        // Example future hook: trigger OTA on long press (stub for now)
+        ota_update_start("https://example.com/firmware.bin");
     }
 }
 
@@ -76,7 +80,8 @@ void app_main(void) {
     mpu6050_init();
     fall_detection_init();
     button_init(GPIO_NUM_0, alert_cb);
-    emergency_button_init(GPIO_NUM_1, emergency_cb);  // Emergency button on GPIO1
+    emergency_button_init(GPIO_NUM_1, emergency_cb);
+    ota_update_init();
 
     // Init BLE
     ble_init();
