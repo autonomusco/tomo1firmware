@@ -14,6 +14,7 @@
 #include "ble.h"
 #include "ota_update.h"
 #include "diagnostics.h"
+#include "cloud_api.h"
 
 static const char *TAG = "APP";
 static esp_timer_handle_t telemetry_timer;
@@ -24,10 +25,12 @@ static void alert_cb(button_event_t ev) {
         diagnostics_event("button_press", "normal");
         ESP_LOGW(TAG, "ALERT button pressed");
         ble_send_alert_code(0x01);
+        cloud_api_send_alert(0x01);
     } else if (ev == BUTTON_EVENT_LONG) {
         diagnostics_event("button_long", "normal");
         ESP_LOGW(TAG, "LONG button press");
         ble_send_alert_code(0x11);
+        cloud_api_send_alert(0x11);
     }
 }
 
@@ -37,10 +40,12 @@ static void emergency_cb(emergency_event_t ev) {
         diagnostics_event("button_press", "emergency");
         ESP_LOGW(TAG, "EMERGENCY button pressed");
         ble_send_alert_code(0x03);
+        cloud_api_send_alert(0x03);
     } else if (ev == EMERGENCY_EVENT_LONG) {
         diagnostics_event("button_long", "emergency");
         ESP_LOGW(TAG, "EMERGENCY button long press");
         ble_send_alert_code(0x13);
+        cloud_api_send_alert(0x13);
 
         // Example future hook: trigger OTA update (stub)
         ota_update_start();
@@ -74,16 +79,20 @@ static void telemetry_cb(void *arg) {
         diagnostics_event("fall_detected", NULL);
         ESP_LOGW(TAG, "FALL detected -> sending alert");
         ble_send_alert_code(0x02);
+        cloud_api_send_alert(0x02);
     }
 
     ESP_LOGI(TAG, "Telemetry | Vbat=%.2fV SOC=%.1f%% | accel[g]=[%.2f, %.2f, %.2f]",
              voltage, soc, m.ax, m.ay, m.az);
+
+    cloud_api_send_telemetry(voltage, soc, m.ax, m.ay, m.az);
 }
 
 /* --------- Main Entry --------- */
 void app_main(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
     diagnostics_init();
+    cloud_api_init();
 
     // Init I²C bus
     esp_err_t err = i2c_bus_init(GPIO_NUM_8, GPIO_NUM_9, 400000);
