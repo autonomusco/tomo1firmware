@@ -6,6 +6,7 @@ idf_component_register(
         "i2c_bus.c"
         "max17048.c"
         "mpu6050.c"
+        "power_mgmt.c"
     INCLUDE_DIRS
         "."
 )
