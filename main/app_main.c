@@ -81,7 +81,7 @@ void app_main(void) {
     fall_detection_init();
     button_init(GPIO_NUM_0, alert_cb);
     emergency_button_init(GPIO_NUM_1, emergency_cb);
-    // ota_update_init();  // Not implemented yet
+    ota_update_init();
 
     // Init BLE
     ble_init();
