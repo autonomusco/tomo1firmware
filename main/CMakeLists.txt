@@ -10,6 +10,7 @@ idf_component_register(
         "ble.c"
         "ota_update.c"
         "diagnostics.c"
+        "cloud_api.c"
     INCLUDE_DIRS
         "."
 )
