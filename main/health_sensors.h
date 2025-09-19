@@ -1,7 +1,7 @@
 #pragma once
 
 typedef struct {
-    float spo2;   // SpO2 oxygen saturation (%)
+    float spo2;   // Oxygen saturation (%)
     float hr;     // Heart rate (bpm)
 } health_reading_t;
 
