@@ -19,14 +19,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Cache ESP-IDF dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.espressif
+            ~/.cache
+          key: ${{ runner.os }}-espidf-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-espidf-
+
       - name: Set up ESP-IDF target
         run: . $IDF_PATH/export.sh && idf.py set-target esp32s3
 
       - name: Build firmware
         run: . $IDF_PATH/export.sh && idf.py build
 
-      - name: Upload firmware artifact
+      - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tomo-pendant-firmware
-          path: build/*.bin
+          path: |
+            build/*.bin
+            build/*.elf
+            build/*.map
