@@ -9,6 +9,7 @@ idf_component_register(
         "emergency_button.c"
         "ble.c"
         "ota_update.c"
+        "diagnostics.c"
     INCLUDE_DIRS
         "."
 )
