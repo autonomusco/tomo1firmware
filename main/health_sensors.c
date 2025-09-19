@@ -8,7 +8,7 @@ static const char *TAG = "HEALTH";
  */
 void health_sensors_init(void) {
     ESP_LOGI(TAG, "Health sensors initialized (stub).");
-    // TODO: add actual sensor init later
+    // TODO: add actual sensor initialization later
 }
 
 /**
@@ -20,6 +20,8 @@ health_reading_t health_sensors_read(void) {
         .hr   = 72.0f   // Example value
     };
 
-    ESP_LOGI(TAG, "Stub health read -> SpO2=%.1f%% HR=%.1f bpm", reading.spo2, reading.hr);
+    ESP_LOGI(TAG, "Stub health read -> SpO2=%.1f%% HR=%.1f bpm",
+             reading.spo2, reading.hr);
+
     return reading;
 }
