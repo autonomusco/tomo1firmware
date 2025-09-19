@@ -3,7 +3,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-/* NimBLE (ESP-IDF) */
 #include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -11,11 +10,10 @@
 #include "host/util/util.h"
 #include "host/ble_gatt.h"
 #include "host/ble_hs_id.h"
-#include "host/ble_store.h"             // for ble_store_util_status_rr
+#include "host/ble_store.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
-#include "esp_bt.h"                     // for esp_bt_controller_mem_release
 #include "ble.h"
 
 static const char *TAG = "BLE_NIMBLE";
@@ -194,10 +192,8 @@ static void start_advertising(void)
     }
 
     struct ble_hs_adv_fields rsp = {0};
-    static ble_uuid16_t bas = { .u = { .type = BLE_UUID_TYPE_16 }, .value = 0x180F };
-    rsp.uuids16 = &bas;
-    rsp.num_uuids16 = 1;
-    rsp.uuids16_is_complete = 1;
+    ble_uuid16_t bas = { .u = { .type = BLE_UUID_TYPE_16 }, .value = 0x180F };
+    rsp.uuids16 = &bas; rsp.num_uuids16 = 1; rsp.uuids16_is_complete = 1;
     ble_gap_adv_rsp_set_fields(&rsp);
 
     rc = ble_gap_adv_start(s_own_addr_type, NULL, BLE_HS_FOREVER, &advp, gap_event_cb, NULL);
@@ -242,19 +238,32 @@ static void ble_host_task(void *param)
     nimble_port_freertos_deinit();
 }
 
+/* ------- Bonding / Security (Stage 4) ------- */
+void ble_enable_bonding(void) {
+    ble_hs_cfg.sm_io_cap = BLE_HS_IO_NO_INPUT_OUTPUT;
+    ble_hs_cfg.sm_bonding = 1;
+    ble_hs_cfg.sm_sc = 1;            // Secure connections
+    ble_hs_cfg.sm_mitm = 0;          // MITM off for now (can enable later)
+    ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
+    ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
+
+    ESP_LOGI(TAG, "BLE bonding enabled");
+}
+
 /* ------- Public API ------- */
 void ble_init(void)
 {
-    // ESP-IDF v5.x init sequence
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
     ESP_ERROR_CHECK(esp_nimble_hci_init());
-
     nimble_port_init();
+
     ble_svc_gap_init();
     ble_svc_gatt_init();
     ble_hs_cfg.reset_cb = on_reset;
     ble_hs_cfg.sync_cb  = on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+
+    ble_enable_bonding();   // Stage 4 addition
+
     nimble_port_freertos_init(ble_host_task);
 }
 
