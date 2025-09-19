@@ -1,7 +1,27 @@
-#ifndef HEALTH_SENSORS_H
-#define HEALTH_SENSORS_H
+#pragma once
+#include <stdbool.h>
+#include "esp_err.h"
 
-void health_sensors_init(void);
-void health_sensors_read(void);
+/**
+ * Stage 8: Health sensor integration (stubs).
+ * For now, returns dummy SpO₂ + HR values.
+ */
 
-#endif // HEALTH_SENSORS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    float spo2;   // oxygen saturation %
+    float hr;     // heart rate bpm
+} health_reading_t;
+
+/** Initialize health sensor subsystem (stub). */
+esp_err_t health_sensors_init(void);
+
+/** Read health values (stub). */
+health_reading_t health_sensors_read(void);
+
+#ifdef __cplusplus
+}
+#endif
