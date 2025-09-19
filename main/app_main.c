@@ -15,6 +15,7 @@
 #include "ota_update.h"
 #include "diagnostics.h"
 #include "cloud_api.h"
+#include "health_sensors.h"
 
 static const char *TAG = "APP";
 static esp_timer_handle_t telemetry_timer;
@@ -82,6 +83,10 @@ static void telemetry_cb(void *arg) {
         cloud_api_send_alert(0x02);
     }
 
+    health_reading_t h = health_sensors_read();
+    diagnostics_event("health_reading", NULL);
+    ESP_LOGI(TAG, "Health | SpO2=%.1f%% HR=%.1f bpm", h.spo2, h.hr);
+
     ESP_LOGI(TAG, "Telemetry | Vbat=%.2fV SOC=%.1f%% | accel[g]=[%.2f, %.2f, %.2f]",
              voltage, soc, m.ax, m.ay, m.az);
 
@@ -93,6 +98,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
     diagnostics_init();
     cloud_api_init();
+    health_sensors_init();
 
     // Init I²C bus
     esp_err_t err = i2c_bus_init(GPIO_NUM_8, GPIO_NUM_9, 400000);
