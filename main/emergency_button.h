@@ -1,9 +1,15 @@
-#ifndef EMERGENCY_BUTTON_H
-#define EMERGENCY_BUTTON_H
-
+#pragma once
+#include "driver/gpio.h"
 #include <stdbool.h>
 
-// Initialize emergency button on given GPIO
-bool emergency_button_init(int gpio);
+typedef enum {
+    EMERGENCY_EVENT_PRESS,
+    EMERGENCY_EVENT_LONG
+} emergency_event_t;
 
-#endif // EMERGENCY_BUTTON_H
+typedef void (*emergency_cb_t)(emergency_event_t ev);
+
+/**
+ * Initialize emergency button on given GPIO pin.
+ */
+void emergency_button_init(gpio_num_t gpio, emergency_cb_t cb);
