@@ -1,43 +1,46 @@
 #include "emergency_button.h"
-#include "esp_log.h"
 #include "driver/gpio.h"
+#include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_attr.h"
 
-#define TAG "EMERGENCY_BUTTON"
+static const char *TAG = "EMERGENCY_BTN";
+static emergency_cb_t s_cb = NULL;
+static gpio_num_t s_gpio;
+static int64_t s_press_start = 0;
 
-// ISR handler
-static void IRAM_ATTR emergency_button_isr_handler(void *arg) {
-    int gpio_num = (int)(intptr_t)arg;
-    // Use ISR-safe logging
-    ESP_EARLY_LOGI(TAG, "Emergency button pressed! (GPIO %d)", gpio_num);
+static void IRAM_ATTR isr(void *arg) {
+    int level = gpio_get_level(s_gpio);
+    int64_t now = esp_timer_get_time();
+
+    if (level == 0) { // pressed
+        s_press_start = now;
+    } else { // released
+        if (s_cb) {
+            int64_t dur_ms = (now - s_press_start) / 1000;
+            if (dur_ms > 1500) {
+                s_cb(EMERGENCY_EVENT_LONG);
+            } else {
+                s_cb(EMERGENCY_EVENT_PRESS);
+            }
+        }
+    }
 }
 
-bool emergency_button_init(int gpio_num) {
+void emergency_button_init(gpio_num_t gpio, emergency_cb_t cb) {
+    s_gpio = gpio;
+    s_cb = cb;
+
     gpio_config_t io_conf = {
-        .pin_bit_mask = 1ULL << gpio_num,
+        .pin_bit_mask = 1ULL << gpio,
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_NEGEDGE,  // Trigger on button press (falling edge)
+        .intr_type = GPIO_INTR_ANYEDGE
     };
+    ESP_ERROR_CHECK(gpio_config(&io_conf));
+    ESP_ERROR_CHECK(gpio_install_isr_service(0));
+    ESP_ERROR_CHECK(gpio_isr_handler_add(gpio, isr, NULL));
 
-    if (gpio_config(&io_conf) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure GPIO %d", gpio_num);
-        return false;
-    }
-
-    // Install ISR service if not already installed
-    if (gpio_install_isr_service(0) != ESP_OK) {
-        ESP_LOGW(TAG, "ISR service already installed");
-    }
-
-    // Add ISR handler for this button GPIO
-    if (gpio_isr_handler_add(gpio_num, emergency_button_isr_handler,
-                             (void *)(intptr_t)gpio_num) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add ISR handler for GPIO %d", gpio_num);
-        return false;
-    }
-
-    ESP_LOGI(TAG, "Emergency button initialized on GPIO %d", gpio_num);
-    return true;
+    ESP_LOGI(TAG, "Emergency button initialized on GPIO %d", gpio);
 }
