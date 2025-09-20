@@ -3,6 +3,7 @@
 #include "esp_err.h"
 #include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
+#include <inttypes.h>   // ✅ for PRIu32 portability
 
 static const char *TAG = "WATCHDOG";
 static bool s_twdt_inited = false;
@@ -16,16 +17,15 @@ void watchdog_init(void)
 
     // ✅ ESP-IDF v5.x API uses config struct
     const esp_task_wdt_config_t twdt_config = {
-        .timeout_ms = 8000,                   // 8 seconds timeout
-        .idle_core_mask = (1 << portGET_CORE_ID()), // Watchdog runs on current core
-        .trigger_panic = false                // Do not trigger panic on timeout
+        .timeout_ms = 8000,                        // 8 seconds
+        .idle_core_mask = (1 << portGET_CORE_ID()),// current core
+        .trigger_panic = false
     };
 
     esp_err_t err = esp_task_wdt_init(&twdt_config);
     if (err == ESP_OK || err == ESP_ERR_INVALID_STATE) {
-        // OK: either initialized or already active
         s_twdt_inited = true;
-        ESP_LOGI(TAG, "TWDT initialized (timeout=%d ms)", twdt_config.timeout_ms);
+        ESP_LOGI(TAG, "TWDT initialized (timeout=%" PRIu32 " ms)", twdt_config.timeout_ms);
     } else {
         ESP_LOGW(TAG, "TWDT init failed: %s", esp_err_to_name(err));
     }
@@ -40,7 +40,7 @@ bool watchdog_enable_task(void)
         return true;
     }
 
-    esp_err_t err = esp_task_wdt_add(NULL); // register current task
+    esp_err_t err = esp_task_wdt_add(NULL);
     if (err == ESP_OK || err == ESP_ERR_INVALID_STATE) {
         s_task_registered = true;
         ESP_LOGI(TAG, "TWDT: current task registered");
