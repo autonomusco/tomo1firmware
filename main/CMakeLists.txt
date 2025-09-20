@@ -3,19 +3,18 @@ idf_component_register(
         app_main.c
         ble.c
         ble_pairing.c
-        ble_advanced.c   # ← new advanced BLE module
+        ble_advanced.c
         button.c
         emergency_button.c
         diagnostics.c
+        power_mgmt.c
         health_sensors.c
         i2c_bus.c
         max17048.c
         mpu6050.c
         ota_update.c
-        power_mgmt.c
-        security.c
-        voice_trigger.c
         cloud_api.c
+        watchdog.c         # ✅ Stage 10 addition
     INCLUDE_DIRS
-        "."
+        .
 )
