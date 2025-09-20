@@ -24,7 +24,7 @@
 
 static const char *TAG = "APP_MAIN";
 
-// Emergency button callback
+// ✅ Fixed callback signature
 static void emergency_cb(emergency_event_t ev) {
     if (ev == EMERGENCY_EVENT_PRESS) {
         ESP_LOGW(TAG, "Emergency button pressed");
@@ -84,9 +84,9 @@ void app_main(void) {
     cloud_api_init();
     cloud_api_send_telemetry(voltage, soc, 0.0f, 0.0f, 0.0f);
 
-    // Diagnostics
+    // ✅ Fixed diagnostics call
     ESP_LOGI(TAG, "Init diagnostics logging");
-    diagnostics_log_event("System init complete");
+    diagnostics_event("System init complete", NULL);
 
     ESP_LOGI(TAG, "=== TOMO Firmware Ready ===");
 }
