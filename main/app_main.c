@@ -88,5 +88,8 @@ void app_main(void) {
     ESP_LOGI(TAG, "Init diagnostics logging");
     diagnostics_event("System init complete", NULL);
 
+    // ✅ Run CI-friendly self-test
+    diagnostics_self_test();
+
     ESP_LOGI(TAG, "=== TOMO Firmware Ready ===");
 }
