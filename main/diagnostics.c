@@ -14,3 +14,9 @@ void diagnostics_event(const char *msg, const char *context) {
         ESP_LOGW(TAG, "diagnostics_event called with NULL msg");
     }
 }
+
+void diagnostics_self_test(void) {
+    // CI-friendly stub to validate both APIs
+    diagnostics_event("Self-test executed", "CI validation");
+    diagnostics_log_event("Self-test alias executed");
+}
