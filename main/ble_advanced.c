@@ -9,24 +9,10 @@ static const char *TAG = "BLE_ADV";
 static uint16_t s_cfg_val_handle = 0;
 static uint16_t s_ota_val_handle = 0;
 
-/* UUIDs – fixed struct initializers */
-static const ble_uuid128_t ADV_SVC_UUID = {
-    .u = { .type = BLE_UUID_TYPE_128 },
-    .value = { 0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
-               0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x02 }
-};
-
-static const ble_uuid128_t CFG_UUID = {
-    .u = { .type = BLE_UUID_TYPE_128 },
-    .value = { 0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
-               0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x00 }
-};
-
-static const ble_uuid128_t OTA_UUID = {
-    .u = { .type = BLE_UUID_TYPE_128 },
-    .value = { 0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
-               0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x01 }
-};
+/* UUIDs declared, initialized at runtime */
+static ble_uuid128_t ADV_SVC_UUID;
+static ble_uuid128_t CFG_UUID;
+static ble_uuid128_t OTA_UUID;
 
 static int gatt_access_cb(uint16_t conn_handle, uint16_t attr_handle,
                           struct ble_gatt_access_ctxt *ctxt, void *arg) {
@@ -57,6 +43,19 @@ static int gatt_access_cb(uint16_t conn_handle, uint16_t attr_handle,
 }
 
 void ble_advanced_init(void) {
+    // Runtime initialization of UUIDs
+    ADV_SVC_UUID = (ble_uuid128_t)BLE_UUID128_INIT(
+        0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
+        0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x02);
+
+    CFG_UUID = (ble_uuid128_t)BLE_UUID128_INIT(
+        0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
+        0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x00);
+
+    OTA_UUID = (ble_uuid128_t)BLE_UUID128_INIT(
+        0xaa,0xbb,0xcc,0xdd,0xee,0xff,0x11,0x22,
+        0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x01);
+
     static const struct ble_gatt_chr_def adv_chrs[] = {
         {
             .uuid = &CFG_UUID.u,
@@ -76,7 +75,7 @@ void ble_advanced_init(void) {
     static const struct ble_gatt_svc_def adv_svc[] = {
         {
             .type = BLE_GATT_SVC_TYPE_PRIMARY,
-            .uuid = &ADV_SVC_UUID.u,   // dedicated Advanced Service UUID
+            .uuid = &ADV_SVC_UUID.u,
             .characteristics = adv_chrs,
         },
         { 0 }
