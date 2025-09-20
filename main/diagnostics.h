@@ -1,4 +1,5 @@
 #pragma once
+#include <stddef.h>   // ✅ ensures NULL is defined
 
 #ifdef __cplusplus
 extern "C" {
