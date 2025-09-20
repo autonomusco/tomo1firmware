@@ -84,7 +84,7 @@ void app_main(void) {
     cloud_api_init();
     cloud_api_send_telemetry(voltage, soc, 0.0f, 0.0f, 0.0f);
 
-    // ✅ Fixed diagnostics call
+    // ✅ Diagnostics standardized
     ESP_LOGI(TAG, "Init diagnostics logging");
     diagnostics_event("System init complete", NULL);
 
