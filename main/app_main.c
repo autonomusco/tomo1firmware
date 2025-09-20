@@ -25,12 +25,12 @@
 static const char *TAG = "APP_MAIN";
 
 // Emergency button callback
-static void emergency_cb(int ev) {
-    if (ev == 1) { // Press
+static void emergency_cb(emergency_event_t ev) {
+    if (ev == EMERGENCY_EVENT_PRESS) {
         ESP_LOGW(TAG, "Emergency button pressed");
         ble_send_alert_code(0x03);
         cloud_api_send_alert(0x03);
-    } else if (ev == 2) { // Long press
+    } else if (ev == EMERGENCY_EVENT_LONG) {
         ESP_LOGW(TAG, "Emergency button long press -> OTA");
         ble_send_alert_code(0x13);
         ota_update_start();
@@ -90,4 +90,3 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "=== TOMO Firmware Ready ===");
 }
-
