@@ -21,10 +21,11 @@
 #include "diagnostics.h"
 #include "ota_update.h"
 #include "cloud_api.h"
+#include "watchdog.h"   // <-- Stage 10
 
 static const char *TAG = "APP_MAIN";
 
-// ✅ Fixed callback signature
+// ✅ Correct signature
 static void emergency_cb(emergency_event_t ev) {
     if (ev == EMERGENCY_EVENT_PRESS) {
         ESP_LOGW(TAG, "Emergency button pressed");
@@ -40,13 +41,18 @@ static void emergency_cb(emergency_event_t ev) {
 void app_main(void) {
     ESP_LOGI(TAG, "=== TOMO Firmware Starting ===");
 
-    // Initialize NVS
+    // NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    // Stage 10: Watchdog baseline
+    watchdog_init();
+    watchdog_enable_task();
+    watchdog_self_test();
 
     // Power management
     ESP_LOGI(TAG, "Init power management");
@@ -67,7 +73,7 @@ void app_main(void) {
     // BLE
     ESP_LOGI(TAG, "Init BLE pairing and services");
     ble_pairing_init();
-    ble_advanced_init();   // Stage 9: add config + OTA trigger services
+    ble_advanced_init();
 
     // OTA subsystem
     ESP_LOGI(TAG, "Init OTA update stubs");
@@ -84,12 +90,12 @@ void app_main(void) {
     cloud_api_init();
     cloud_api_send_telemetry(voltage, soc, 0.0f, 0.0f, 0.0f);
 
-    // ✅ Diagnostics standardized
+    // Diagnostics
     ESP_LOGI(TAG, "Init diagnostics logging");
     diagnostics_event("System init complete", NULL);
 
-    // ✅ Run CI-friendly self-test
-    diagnostics_self_test();
+    // (Optional) feed once at end of boot path
+    (void)watchdog_feed();
 
     ESP_LOGI(TAG, "=== TOMO Firmware Ready ===");
 }
